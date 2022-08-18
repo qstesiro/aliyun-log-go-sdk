@@ -2,17 +2,17 @@ package main
 
 import (
 	"fmt"
-	"time"
+	// "time"
 
 	"github.com/aliyun/aliyun-log-go-sdk/example/util"
 )
 
-func main(){
+func main() {
 	fmt.Println("Create Project")
-	_, err := util.Client.CreateProject(util.ProjectName,"Project used for testing")
-	if err != nil {
-		fmt.Println(err)
-	}
+	// _, err := util.Client.CreateProject(util.ProjectName, "Project used for testing")
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
 	project, err := util.Client.GetProject(util.ProjectName)
 	if err != nil {
 		panic(err)
@@ -20,17 +20,18 @@ func main(){
 	fmt.Println("project created successfully:", project.Name)
 
 	project, err = util.Client.UpdateProject(util.ProjectName, "Updated description")
-	if err != nil{
-		panic(err)
-	}
-	fmt.Println("Modify the description of the project successfully")
-	fmt.Println("Prepare to delete the project after 20 seconds")
-	time.Sleep(20 * time.Second)
-	err = util.Client.DeleteProject(util.ProjectName)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("Delete project sucessfully")
+	fmt.Println("Modify the description of the project successfully")
+	// 不要删除project
+	// fmt.Println("Prepare to delete the project after 20 seconds")
+	// time.Sleep(20 * time.Second)
+	// err = util.Client.DeleteProject(util.ProjectName)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// fmt.Println("Delete project sucessfully")
 	listAllProject()
 }
 
