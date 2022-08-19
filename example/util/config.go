@@ -1,6 +1,8 @@
 package util
 
 import (
+	"os"
+
 	sls "github.com/aliyun/aliyun-log-go-sdk"
 )
 
@@ -15,11 +17,16 @@ var (
 	Client          sls.ClientInterface
 )
 
+const (
+	ACCESS_KEY_ID     = "ACCESS_KEY_ID"
+	ACCESS_KEY_SECRET = "ACCESS_KEY_SECRET"
+)
+
 // You can get the variable from the environment variable, or fill in the required configuration directly in the init function.
 func init() {
 	ProjectName = "hmm-demo-1"
-	AccessKeyID = "LTAI5tDQ776Zcd3aWUkKeHkT"
-	AccessKeySecret = "1nzAq9CJB2XLWmPifLzd0VhhGbXV0B"
+	AccessKeyID = os.Getenv(ACCESS_KEY_ID)
+	AccessKeySecret = os.Getenv(ACCESS_KEY_SECRET)
 	Endpoint = "cn-qingdao.log.aliyuncs.com" // just like cn-hangzhou.log.aliyuncs.com
 	// LogStoreName = "store-01"
 	LogStoreName = "store-02"
