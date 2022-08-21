@@ -11,17 +11,16 @@ import (
 )
 
 func main() {
-
 	fmt.Println("loghub sample begin")
 	logstore_name := "test"
 	util.Client.DeleteLogStore(util.ProjectName, logstore_name)
-	time.Sleep(15 * 1000 * time.Millisecond)
+	// time.Sleep(15 * 1000 * time.Millisecond) // 为什么等待15秒 ???
 	err := util.Client.CreateLogStore(util.ProjectName, logstore_name, 1, 2, true, 16)
 	if err != nil {
 		fmt.Printf("CreateLogStore fail, err: %s", err)
 		return
 	}
-	time.Sleep(15 * 1000 * time.Millisecond)
+	// time.Sleep(15 * 1000 * time.Millisecond) // 为什么等待15秒 ???
 	fmt.Println("CreateLogStore success")
 	logstore, err := util.Client.GetLogStore(util.ProjectName, logstore_name)
 	if err != nil {
@@ -31,12 +30,12 @@ func main() {
 	fmt.Printf("GetLogStore success, name: %s, ttl: %d, shardCount: %d, createTime: %d, lastModifyTime: %d\n", logstore.Name, logstore.TTL, logstore.ShardCount, logstore.CreateTime, logstore.LastModifyTime)
 	indexKeys := map[string]sls.IndexKey{
 		"col_0": {
-			Token:         []string{" "},
+			Token:         []string{" "}, // 分词符
 			CaseSensitive: false,
 			Type:          "long",
 		},
 		"col_1": {
-			Token:         []string{",", ":", " "},
+			Token:         []string{",", ":", " "}, // 分词符
 			CaseSensitive: false,
 			Type:          "text",
 		},
@@ -44,7 +43,7 @@ func main() {
 	index := sls.Index{
 		Keys: indexKeys,
 		Line: &sls.IndexLine{
-			Token:         []string{",", ":", " "},
+			Token:         []string{",", ":", " "}, // 分词符
 			CaseSensitive: false,
 			IncludeKeys:   []string{},
 			ExcludeKeys:   []string{},
@@ -56,10 +55,12 @@ func main() {
 		return
 	}
 	fmt.Println("CreateIndex success")
-	time.Sleep(30 * 1000 * time.Millisecond)
+	// time.Sleep(30 * 1000 * time.Millisecond) // 为什么等待15秒 ???
 	begin_time := uint32(time.Now().Unix())
 	rand.Seed(int64(begin_time))
 	// put logs to logstore
+	// 写入10组每组100条每条10个字段,只有col_0/1有索引项
+	// 数据写入不稳定会少数据(因为是通过公网) ???
 	for loggroupIdx := 0; loggroupIdx < 10; loggroupIdx++ {
 		logs := []*sls.Log{}
 		for logIdx := 0; logIdx < 100; logIdx++ {
@@ -95,44 +96,44 @@ func main() {
 		} else {
 			fmt.Printf("PutLogs fail, err: %s\n", err)
 		}
-		time.Sleep(1000 * time.Millisecond)
+		time.Sleep(1000 * time.Millisecond) // 直接time.Second ???
 	}
-	end_time := uint32(time.Now().Unix())
+	// end_time := uint32(time.Now().Unix())
 	time.Sleep(15 * 1000 * time.Millisecond)
 	// search logs from index on logstore
-	totalCount := int64(0)
-	for {
-		// GetHistograms API Ref: https://intl.aliyun.com/help/doc-detail/29030.htm
-		ghResp, err := util.Client.GetHistograms(util.ProjectName, logstore_name, "", int64(begin_time), int64(end_time), "col_0 > 1000000")
-		if err != nil {
-			fmt.Printf("GetHistograms fail, err: %v\n", err)
-			time.Sleep(10 * time.Millisecond)
-			continue
-		}
-		fmt.Printf("complete: %s, count: %d, histograms: %v\n", ghResp.Progress, ghResp.Count, ghResp.Histograms)
-		totalCount += ghResp.Count
-		if ghResp.Progress == "Complete" {
-			break
-		}
-	}
-	offset := int64(0)
-	// get logs repeatedly with (offset, lines) parameters to get complete result
-	for offset < totalCount {
-		// GetLogs API Ref: https://intl.aliyun.com/help/doc-detail/29029.htm
-		glResp, err := util.Client.GetLogs(util.ProjectName, logstore_name, "", int64(begin_time), int64(end_time), "col_0 > 1000000", 100, offset, false)
-		if err != nil {
-			fmt.Printf("GetLogs fail, err: %v\n", err)
-			time.Sleep(10 * time.Millisecond)
-			continue
-		}
-		fmt.Printf("Progress:%s, Count:%d, offset: %d\n", glResp.Progress, glResp.Count, offset)
-		offset += glResp.Count
-		if glResp.Count > 0 {
-			fmt.Printf("logs: %v\n", glResp.Logs)
-		}
-		if glResp.Progress == "Complete" && glResp.Count == 0 {
-			break
-		}
-	}
+	// totalCount := int64(0)
+	// for {
+	// 	// GetHistograms API Ref: https://intl.aliyun.com/help/doc-detail/29030.htm
+	// 	ghResp, err := util.Client.GetHistograms(util.ProjectName, logstore_name, "", int64(begin_time), int64(end_time), "col_0 > 1000000")
+	// 	if err != nil {
+	// 		fmt.Printf("GetHistograms fail, err: %v\n", err)
+	// 		time.Sleep(10 * time.Millisecond)
+	// 		continue
+	// 	}
+	// 	fmt.Printf("complete: %s, count: %d, histograms: %v\n", ghResp.Progress, ghResp.Count, ghResp.Histograms)
+	// 	totalCount += ghResp.Count
+	// 	if ghResp.Progress == "Complete" {
+	// 		break
+	// 	}
+	// }
+	// offset := int64(0)
+	// // get logs repeatedly with (offset, lines) parameters to get complete result
+	// for offset < totalCount {
+	// 	// GetLogs API Ref: https://intl.aliyun.com/help/doc-detail/29029.htm
+	// 	glResp, err := util.Client.GetLogs(util.ProjectName, logstore_name, "", int64(begin_time), int64(end_time), "col_0 > 1000000", 100, offset, false)
+	// 	if err != nil {
+	// 		fmt.Printf("GetLogs fail, err: %v\n", err)
+	// 		time.Sleep(10 * time.Millisecond)
+	// 		continue
+	// 	}
+	// 	fmt.Printf("Progress:%s, Count:%d, offset: %d\n", glResp.Progress, glResp.Count, offset)
+	// 	offset += glResp.Count
+	// 	if glResp.Count > 0 {
+	// 		fmt.Printf("logs: %v\n", glResp.Logs)
+	// 	}
+	// 	if glResp.Progress == "Complete" && glResp.Count == 0 {
+	// 		break
+	// 	}
+	// }
 	fmt.Println("index sample end")
 }

@@ -12,14 +12,15 @@ import (
 
 func main() {
 	producerConfig := producer.GetDefaultProducerConfig()
-	producerConfig.Endpoint = os.Getenv("Endpoint")
-	producerConfig.AccessKeyID = os.Getenv("AccessKeyID")
-	producerConfig.AccessKeySecret = os.Getenv("AccessKeySecret")
+	producerConfig.Endpoint = os.Getenv("ENDPOINT")
+	producerConfig.AccessKeyID = os.Getenv("ACCESS_KEY_ID")
+	producerConfig.AccessKeySecret = os.Getenv("ACCESS_KEY_SECRET")
 	producerInstance := producer.InitProducer(producerConfig)
 	ch := make(chan os.Signal)
 	signal.Notify(ch, os.Kill, os.Interrupt)
 	producerInstance.Start()
 	var m sync.WaitGroup
+	// 10个协程每个协程1000条共计10,000条数据
 	for i := 0; i < 10; i++ {
 		m.Add(1)
 		go func() {

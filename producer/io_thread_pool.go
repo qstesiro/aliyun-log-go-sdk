@@ -28,12 +28,16 @@ func initIoThreadPool(ioworker *IoWorker, logger log.Logger) *IoThreadPool {
 }
 
 func (threadPool *IoThreadPool) addTask(batch *ProducerBatch) {
+	// 先defer再获取锁(思路清奇) ???
 	defer threadPool.lock.Unlock()
 	threadPool.lock.Lock()
+	// 增加数据没有做任何的限制
+	// 如果底层work慢导致无协程可用就不能及时处理内存会急速增加甚至是OOM ???
 	threadPool.queue.PushBack(batch)
 }
 
 func (threadPool *IoThreadPool) popTask() *ProducerBatch {
+	// 先defer再获取锁(思路清奇) ???
 	defer threadPool.lock.Unlock()
 	threadPool.lock.Lock()
 	if threadPool.queue.Len() <= 0 {
@@ -45,6 +49,7 @@ func (threadPool *IoThreadPool) popTask() *ProducerBatch {
 }
 
 func (threadPool *IoThreadPool) hasTask() bool {
+	// 先defer再获取锁(思路清奇) ???
 	defer threadPool.lock.RUnlock()
 	threadPool.lock.RLock()
 	return threadPool.queue.Len() > 0
@@ -55,6 +60,7 @@ func (threadPool *IoThreadPool) start(ioWorkerWaitGroup *sync.WaitGroup, ioThrea
 	for {
 		if task := threadPool.popTask(); task != nil {
 			threadPool.ioworker.startSendTask(ioWorkerWaitGroup)
+			// 具体的work应该在io_work部分包装更合理 ???
 			go func(producerBatch *ProducerBatch) {
 				defer threadPool.ioworker.closeSendTask(ioWorkerWaitGroup)
 				threadPool.ioworker.sendToServer(producerBatch)
