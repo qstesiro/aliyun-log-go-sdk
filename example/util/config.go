@@ -20,6 +20,7 @@ var (
 const (
 	ACCESS_KEY_ID     = "ACCESS_KEY_ID"
 	ACCESS_KEY_SECRET = "ACCESS_KEY_SECRET"
+	ENDPOINT          = "ENDPOINT"
 )
 
 // You can get the variable from the environment variable, or fill in the required configuration directly in the init function.
@@ -27,7 +28,7 @@ func init() {
 	ProjectName = "hmm-demo-1"
 	AccessKeyID = os.Getenv(ACCESS_KEY_ID)
 	AccessKeySecret = os.Getenv(ACCESS_KEY_SECRET)
-	Endpoint = "cn-qingdao.log.aliyuncs.com" // just like cn-hangzhou.log.aliyuncs.com
+	Endpoint = os.Getenv(ENDPOINT) // just like cn-hangzhou.log.aliyuncs.com
 	// LogStoreName = "store-01"
 	LogStoreName = "store-02"
 
