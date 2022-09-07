@@ -145,8 +145,9 @@ func CreateIndex(proj, store string) error {
 				// 	DocValue: true,
 				// },
 				"col_1": {
-					Type:     "long",
-					DocValue: false,
+					Type:     "text",
+					Token:    []string{",", ":", " ", "-"}, // 分词符
+					DocValue: true,
 				},
 			},
 			// 对未配制索引的字段生效
