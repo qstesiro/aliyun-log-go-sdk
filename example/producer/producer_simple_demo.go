@@ -286,22 +286,27 @@ func getProducer() *producer.Producer {
 
 const (
 	GORMAX = 10
+	BATCH  = 100
 	COUNT  = 1000
 )
 
 func sendLog(producer *producer.Producer, proj, store string) {
 	producer.Start()
 	var m sync.WaitGroup
-	for i := 0; i < GORMAX; i++ {
+	for i := 0; i < GORMAX; i += 1 {
 		m.Add(1)
 		go func(idx int) {
 			defer m.Done()
-			for i := 0; i < COUNT; i++ {
-				// GenerateLog  is producer's function for generating SLS format logs
-				// GenerateLog has low performance, and native Log interface is the best choice for high performance.
-				// log := producer.GenerateLog(uint32(time.Now().Unix()), map[string]string{"content": "test", "content2": fmt.Sprintf("%v", i)})
-				if err := producer.SendLog(
-					proj, store, "demo-topic", "127.0.0.1", toLog(getMap()),
+			for i := 0; i < BATCH; i += 1 {
+				lst := []*sls.Log{}
+				for i := 0; i < COUNT; i += 1 {
+					// GenerateLog  is producer's function for generating SLS format logs
+					// GenerateLog has low performance, and native Log interface is the best choice for high performance.
+					// log := producer.GenerateLog(uint32(time.Now().Unix()), map[string]string{"content": "test", "content2": fmt.Sprintf("%v", i)})
+					lst = append(lst, toLog(getMap()))
+				}
+				if err := producer.SendLogList(
+					proj, store, "demo-topic", "127.0.0.1", lst,
 				); err != nil {
 					fmt.Println(err)
 				}
