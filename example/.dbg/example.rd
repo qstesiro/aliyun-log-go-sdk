@@ -25,9 +25,6 @@
 {
     json类型内部不支持json嵌套 ???
     - json内数据text类型不支持"大小写敏感","分词","包含中文"
-    - JsonKey与将字段展开是否是一样的 ???
-
-    从es迁移数据,操作成功,但是在sls控制台无法查看到数据 ???
 
     是否支持直接从kafka作为数据源接入数据 ???
     索引类型只支持text,long,double,json,日志中其它类型,例如:datetime,bool如何处理 ??? bool设置为text

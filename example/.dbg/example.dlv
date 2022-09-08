@@ -2,4 +2,9 @@
 
 # b index_sample.go:91
 
+# b main.getMap
+# b main.toLog
+
+# b main.sendLog
+
 g
