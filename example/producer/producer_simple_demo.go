@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"sync"
 	"time"
+	"unsafe"
 
 	"github.com/gogo/protobuf/proto"
 
@@ -269,7 +270,7 @@ func toLog(mps map[string]any) *sls.Log {
 			log.Contents,
 			&sls.LogContent{
 				Key:   proto.String(k),
-				Value: proto.String(string(val)),
+				Value: proto.String(*(*string)(unsafe.Pointer(&val))),
 			},
 		)
 	}
