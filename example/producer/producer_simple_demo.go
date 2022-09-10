@@ -36,8 +36,9 @@ func main() {
 	sign := make(chan os.Signal)
 	signal.Notify(sign, os.Kill, os.Interrupt)
 	producer := getProducer()
-	defer producer.Close(10 * 1000)
-	sendLog(producer, util.ProjectName, logstore_name)
+	defer producer.SafeClose()
+	// sendLog(producer, util.ProjectName, logstore_name) // 同步
+	asyncSendLog(producer, util.ProjectName, logstore_name) // 异步
 	if _, ok := <-sign; ok {
 		fmt.Println("Get the shutdown signal and start to shut down")
 	}
@@ -282,6 +283,7 @@ func getProducer() *producer.Producer {
 	config.AccessKeyID = os.Getenv("ACCESS_KEY_ID")
 	config.AccessKeySecret = os.Getenv("ACCESS_KEY_SECRET")
 	config.Endpoint = os.Getenv("ENDPOINT")
+	config.MaxReservedAttempts = 3
 	return producer.InitProducer(config)
 }
 
@@ -317,4 +319,58 @@ func sendLog(producer *producer.Producer, proj, store string) {
 	}
 	m.Wait()
 	fmt.Printf("all send completion\n")
+}
+
+func asyncSendLog(producer *producer.Producer, proj, store string) {
+	producer.Start()
+	var m sync.WaitGroup
+	callback := new(Callback)
+	for i := 0; i < GORMAX; i += 1 {
+		m.Add(1)
+		go func(idx int) {
+			defer m.Done()
+			for i := 0; i < BATCH; i += 1 {
+				lst := []*sls.Log{}
+				for i := 0; i < COUNT; i += 1 {
+					// GenerateLog  is producer's function for generating SLS format logs
+					// GenerateLog has low performance, and native Log interface is the best choice for high performance.
+					// log := producer.GenerateLog(uint32(time.Now().Unix()), map[string]string{"content": "test", "content2": fmt.Sprintf("%v", i)})
+					lst = append(lst, toLog(getMap()))
+				}
+				if err := producer.SendLogListWithCallBack(
+					proj, store, "demo-topic", "127.0.0.1", lst, callback,
+				); err != nil {
+					fmt.Println(err)
+				}
+			}
+			fmt.Printf("#%d send completion\n", idx)
+		}(i)
+	}
+	m.Wait()
+	fmt.Printf("all send completion\n")
+}
+
+type Callback struct {
+}
+
+func (r *Callback) Success(res *producer.Result) {
+	// attemptList := res.GetReservedAttempts() // 遍历获得所有的发送记录
+	// for _, attempt := range attemptList {
+	// 	fmt.Println(attempt)
+	// }
+}
+
+func (r *Callback) Fail(res *producer.Result) {
+	fmt.Printf(
+		"id: %v, code: %v, message: %v\n",
+		res.GetRequestId(),
+		res.GetErrorCode(),
+		res.GetErrorMessage(),
+	)
+	// fmt.Println(res.IsSuccessful())        // 获得发送日志是否成功
+	// fmt.Println(res.GetErrorCode())        // 获得最后一次发送失败错误码
+	// fmt.Println(res.GetErrorMessage())     // 获得最后一次发送失败信息
+	// fmt.Println(res.GetReservedAttempts()) // 获得producerBatch 每次尝试被发送的信息
+	// fmt.Println(res.GetRequestId())        // 获得最后一次发送失败请求Id
+	// fmt.Println(res.GetTimeStampMs())      // 获得最后一次发送失败请求时间
 }
