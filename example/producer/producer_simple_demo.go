@@ -70,7 +70,7 @@ func createIndex(proj, store string) error {
 							DocValue: true,
 						},
 						"metadata.group": &sls.JsonKey{
-							Type:     "long",
+							Type:     "text",
 							DocValue: true,
 						},
 						"metadata.timestamp": &sls.JsonKey{ // 第二级及后续级别必须扁平化
@@ -218,7 +218,7 @@ func getMap() map[string]any {
 	return map[string]any{
 		"@context": map[string]any{
 			"logSize": rand.Intn(1000),
-			"@metadata": map[string]any{
+			"metadata": map[string]any{
 				"group":     group,
 				"timestamp": timestamp,
 			},
