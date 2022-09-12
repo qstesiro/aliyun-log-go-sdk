@@ -32,50 +32,20 @@ func main() {
 	// 创建索引后如果不等待30秒数据写入虽然返回成功,但实际是失败的 ???
 	fmt.Printf("waiting %d seconds ...\n", WAITING*3)
 	time.Sleep(WAITING * 3 * time.Second) // 为什么等待 ???
+	beginTime := time.Now().Unix()
 	fmt.Printf("PutLogs project: %s, store: %s\n", util.ProjectName, logstore_name)
 	if err := PutLogs(util.ProjectName, logstore_name); err != nil {
 		fmt.Printf("PutLogs fail, err: %s\n", err)
 		return
 	}
-	// end_time := uint32(time.Now().Unix())
+	endTime := time.Now().Unix()
 	fmt.Printf("waiting %d seconds ...\n", WAITING)
 	time.Sleep(WAITING * time.Second) // 为什么等待 ???
-	// // search logs from index on logstore
-	// // totalCount := int64(0)
-	// // for {
-	// // 	// GetHistograms API Ref: https://intl.aliyun.com/help/doc-detail/29030.htm
-	// // 	ghResp, err := util.Client.GetHistograms(util.ProjectName, logstore_name, "", int64(begin_time), int64(end_time), "col_0 > 1000000")
-	// // 	if err != nil {
-	// // 		fmt.Printf("GetHistograms fail, err: %v\n", err)
-	// // 		time.Sleep(10 * time.Millisecond)
-	// // 		continue
-	// // 	}
-	// // 	fmt.Printf("complete: %s, count: %d, histograms: %v\n", ghResp.Progress, ghResp.Count, ghResp.Histograms)
-	// // 	totalCount += ghResp.Count
-	// // 	if ghResp.Progress == "Complete" {
-	// // 		break
-	// // 	}
-	// // }
-	// // offset := int64(0)
-	// // // get logs repeatedly with (offset, lines) parameters to get complete result
-	// // for offset < totalCount {
-	// // 	// GetLogs API Ref: https://intl.aliyun.com/help/doc-detail/29029.htm
-	// // 	glResp, err := util.Client.GetLogs(util.ProjectName, logstore_name, "", int64(begin_time), int64(end_time), "col_0 > 1000000", 100, offset, false)
-	// // 	if err != nil {
-	// // 		fmt.Printf("GetLogs fail, err: %v\n", err)
-	// // 		time.Sleep(10 * time.Millisecond)
-	// // 		continue
-	// // 	}
-	// // 	fmt.Printf("Progress:%s, Count:%d, offset: %d\n", glResp.Progress, glResp.Count, offset)
-	// // 	offset += glResp.Count
-	// // 	if glResp.Count > 0 {
-	// // 		fmt.Printf("logs: %v\n", glResp.Logs)
-	// // 	}
-	// // 	if glResp.Progress == "Complete" && glResp.Count == 0 {
-	// // 		break
-	// // 	}
-	// // }
-	// fmt.Println("index sample end")
+	if err := getLogs(util.ProjectName, logstore_name, beginTime, endTime); err != nil {
+		fmt.Printf("PutLogs fail, err: %s\n", err)
+		return
+	}
+	fmt.Println("index sample end")
 }
 
 func CreateStore(proj, store string) error {
@@ -180,7 +150,7 @@ func CreateIndex(proj, store string) error {
 							DocValue: true,
 						},
 						"metadata.group": &sls.JsonKey{
-							Type:     "long",
+							Type:     "text",
 							DocValue: true,
 						},
 						"metadata.timestamp": &sls.JsonKey{ // 第二级及后续级别必须扁平化
@@ -205,6 +175,10 @@ func CreateIndex(proj, store string) error {
 						},
 						"topic": &sls.JsonKey{
 							Type:     "text",
+							DocValue: true,
+						},
+						"list": &sls.JsonKey{
+							Type:     "text", // 数组类型值转换为字符串形式
 							DocValue: true,
 						},
 					},
@@ -441,7 +415,7 @@ func getMap() map[string]any {
 	return map[string]any{
 		"@context": map[string]any{
 			"logSize": rand.Intn(1000),
-			"@metadata": map[string]any{
+			"metadata": map[string]any{
 				"group":     group,
 				"timestamp": timestamp,
 			},
@@ -450,6 +424,7 @@ func getMap() map[string]any {
 			"rawSize":   rand.Intn(1000),
 			"timestamp": timestamp,
 			"topic":     topic,
+			"list":      []string{"log1", "log2", "log3", "log4", "log5", "log6"}, // 转换为字符串形式
 		},
 		"@metadata": map[string]any{
 			"beat":    "filebeat",
@@ -499,4 +474,59 @@ func toLog(mps map[string]any) *sls.Log {
 		)
 	}
 	return log
+}
+
+func getLogs(proj, store string, begin, end int64) error {
+	// search logs from index on logstore
+	total, err := getTotal(proj, store, begin, end)
+	if err != nil {
+		return err
+	}
+	offset := int64(0)
+	// get logs repeatedly with (offset, lines) parameters to get complete result
+	for offset < total {
+		// GetLogs API Ref: https://intl.aliyun.com/help/doc-detail/29029.htm
+		// 查询默认返回100
+		resp, err := util.Client.GetLogs(
+			proj, store, "", begin, end, "*", 150, offset, false,
+		)
+		if err != nil {
+			fmt.Printf("GetLogs fail, err: %v\n", err)
+			// time.Sleep(10 * time.Millisecond)
+			// continue
+			return err
+		}
+		fmt.Printf("Progress:%s, Count:%d, offset: %d\n", resp.Progress, resp.Count, offset)
+		offset += resp.Count
+		// if glResp.Count > 0 {
+		// 	fmt.Printf("logs: %v\n", glResp.Logs)
+		// }
+		if resp.Progress == "Complete" && resp.Count == 0 {
+			break
+		}
+	}
+	return nil
+}
+
+func getTotal(proj, store string, begin, end int64) (int64, error) {
+	total := int64(0)
+	for {
+		// GetHistograms API Ref: https://intl.aliyun.com/help/doc-detail/29030.htm
+		// 获取时间区间内所有日志的条数(没有参数控制historgram的窗口大小)
+		resp, err := util.Client.GetHistograms(
+			proj, store, "", begin, end, "*",
+		)
+		if err != nil {
+			fmt.Printf("GetHistograms fail, err: %v\n", err)
+			// time.Sleep(10 * time.Millisecond)
+			// continue
+			return 0, err
+		}
+		fmt.Printf("complete: %s, count: %d, histograms: %v\n", resp.Progress, resp.Count, resp.Histograms)
+		total += resp.Count
+		if resp.Progress == "Complete" {
+			break
+		}
+	}
+	return total, nil
 }

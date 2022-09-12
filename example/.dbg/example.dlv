@@ -6,5 +6,6 @@
 # b main.toLog
 
 # b main.sendLog
+b main.getLogs
 
 g

@@ -73,15 +73,15 @@ func createIndex(proj, store string) error {
 							Type:     "text",
 							DocValue: true,
 						},
-						"metadata.timestamp": &sls.JsonKey{ // 第二级及后续级别必须扁平化
+						"metadata.timestamp": &sls.JsonKey{ // map必须扁平化
 							Type:     "text",
 							DocValue: true,
 						},
-						"offset": &sls.JsonKey{ // 第二级及后续级别必须扁平化
+						"offset": &sls.JsonKey{ // map必须扁平化
 							Type:     "long",
 							DocValue: true,
 						},
-						"partition": &sls.JsonKey{ // 第二级及后续级别必须扁平化
+						"partition": &sls.JsonKey{ // map必须扁平化
 							Type:     "long",
 							DocValue: true,
 						},
@@ -95,6 +95,10 @@ func createIndex(proj, store string) error {
 						},
 						"topic": &sls.JsonKey{
 							Type:     "text",
+							DocValue: true,
+						},
+						"list": &sls.JsonKey{
+							Type:     "text", // 数组类型值转换为字符串形式
 							DocValue: true,
 						},
 					},
@@ -227,6 +231,7 @@ func getMap() map[string]any {
 			"rawSize":   rand.Intn(1000),
 			"timestamp": timestamp,
 			"topic":     topic,
+			"list":      []string{"log1", "log2", "log3", "log4", "log5", "log6"}, // 转换为字符串形式
 		},
 		"@metadata": map[string]any{
 			"beat":    "filebeat",
@@ -271,7 +276,7 @@ func toLog(mps map[string]any) *sls.Log {
 			log.Contents,
 			&sls.LogContent{
 				Key:   proto.String(k),
-				Value: proto.String(*(*string)(unsafe.Pointer(&val))),
+				Value: proto.String(*(*string)(unsafe.Pointer(&val))), // 优化
 			},
 		)
 	}
