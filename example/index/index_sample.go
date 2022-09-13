@@ -52,7 +52,7 @@ func CreateStore(proj, store string) error {
 	util.Client.DeleteLogStore(proj, store)
 	fmt.Printf("waiting %d seconds ...\n", WAITING)
 	time.Sleep(WAITING * time.Second) // 为什么等待 ???
-	err := util.Client.CreateLogStore(proj, store, 1, 2, true, 16)
+	err := util.Client.CreateLogStore(proj, store, 90, 2, true, 16)
 	if err != nil {
 		return err
 	}

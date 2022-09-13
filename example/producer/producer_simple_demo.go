@@ -50,7 +50,7 @@ const (
 
 func createStore(proj, store string) error {
 	util.Client.DeleteLogStore(proj, store)
-	return util.Client.CreateLogStore(proj, store, 1, 2, true, 16)
+	return util.Client.CreateLogStore(proj, store, 90, 2, true, 16)
 }
 
 func createIndex(proj, store string) error {
