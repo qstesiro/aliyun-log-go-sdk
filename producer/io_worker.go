@@ -50,7 +50,7 @@ func (ioWorker *IoWorker) sendToServer(producerBatch *ProducerBatch) {
 	} else {
 		err = ioWorker.client.PutLogs(producerBatch.getProject(), producerBatch.getLogstore(), producerBatch.logGroup)
 	}
-	if err == nil {
+	if err == nil { // 发送成功
 		level.Debug(ioWorker.logger).Log("msg", "sendToServer suecssed,Execute successful callback function")
 		if producerBatch.attemptCount < producerBatch.maxReservedAttempts {
 			nowMs := GetTimeMs(time.Now().UnixNano())
@@ -65,10 +65,10 @@ func (ioWorker *IoWorker) sendToServer(producerBatch *ProducerBatch) {
 				callBack.Success(producerBatch.result)
 			}
 		}
-	} else {
+	} else { // 发送失败
 		if ioWorker.retryQueueShutDownFlag.Load() {
 			if len(producerBatch.callBackList) > 0 {
-				for _, callBack := range producerBatch.callBackList {
+				for _, callBack := range producerBatch.callBackList { // 记录重试信息
 					ioWorker.addErrorMessageToBatchAttempt(producerBatch, err, false, beginMs)
 					callBack.Fail(producerBatch.result)
 				}
@@ -77,13 +77,13 @@ func (ioWorker *IoWorker) sendToServer(producerBatch *ProducerBatch) {
 		}
 		level.Info(ioWorker.logger).Log("msg", "sendToServer failed", "error", err)
 		if slsError, ok := err.(*sls.Error); ok {
-			if _, ok := ioWorker.noRetryStatusCodeMap[int(slsError.HTTPCode)]; ok {
+			if _, ok := ioWorker.noRetryStatusCodeMap[int(slsError.HTTPCode)]; ok { // 部分错误不需要进行重试
 				ioWorker.addErrorMessageToBatchAttempt(producerBatch, err, false, beginMs)
 				ioWorker.excuteFailedCallback(producerBatch)
 				return
 			}
 		}
-		if producerBatch.attemptCount < producerBatch.maxRetryTimes {
+		if producerBatch.attemptCount < producerBatch.maxRetryTimes { // 小于重试次数,记录重试信息并放入重试队列
 			ioWorker.addErrorMessageToBatchAttempt(producerBatch, err, true, beginMs)
 			retryWaitTime := producerBatch.baseRetryBackoffMs * int64(math.Pow(2, float64(producerBatch.attemptCount)-1))
 			if retryWaitTime < producerBatch.maxRetryIntervalInMs {

@@ -16,7 +16,7 @@ type LogAccumulator struct {
 	lock           sync.RWMutex
 	logGroupData   map[string]*ProducerBatch
 	producerConfig *ProducerConfig
-	ioWorker       *IoWorker
+	ioWorker       *IoWorker // 实际并未使用
 	shutDownFlag   *uberatomic.Bool
 	logger         log.Logger
 	threadPool     *IoThreadPool

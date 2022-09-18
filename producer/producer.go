@@ -33,6 +33,7 @@ func InitProducer(producerConfig *ProducerConfig) *Producer {
 	logger := logConfig(producerConfig)
 
 	client := sls.CreateNormalInterface(producerConfig.Endpoint, producerConfig.AccessKeyID, producerConfig.AccessKeySecret, "")
+	// STSToken自动更新
 	if producerConfig.UpdateStsToken != nil && producerConfig.StsTokenShutDown != nil {
 		stsClient, err := sls.CreateTokenAutoUpdateClient(producerConfig.Endpoint, producerConfig.UpdateStsToken, producerConfig.StsTokenShutDown)
 		if err != nil {

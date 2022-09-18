@@ -22,7 +22,7 @@ func initMover(logAccumulator *LogAccumulator, retryQueue *RetryQueue, ioWorker 
 	mover := &Mover{
 		moverShutDownFlag: atomic.NewBool(false),
 		retryQueue:        retryQueue,
-		ioWorker:          ioWorker,
+		ioWorker:          ioWorker, // 实际并未使用
 		logAccumulator:    logAccumulator,
 		logger:            logger,
 		threadPool:        threadPool,
