@@ -1,4 +1,6 @@
-# b main.main
+b main.main
+
+b createStore
 
 # b index_sample.go:91
 
@@ -6,6 +8,6 @@
 # b main.toLog
 
 # b main.sendLog
-b main.getLogs
+# b main.getLogs
 
 g

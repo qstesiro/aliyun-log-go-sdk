@@ -25,12 +25,12 @@ const (
 
 // You can get the variable from the environment variable, or fill in the required configuration directly in the init function.
 func init() {
-	ProjectName = "hmm-demo-1"
+	ProjectName = "hmm-demo-01"
 	AccessKeyID = os.Getenv(ACCESS_KEY_ID)
 	AccessKeySecret = os.Getenv(ACCESS_KEY_SECRET)
 	Endpoint = os.Getenv(ENDPOINT) // just like cn-hangzhou.log.aliyuncs.com
 	// LogStoreName = "store-01"
-	LogStoreName = "store-02"
+	LogStoreName = "store-01"
 
 	Client = sls.CreateNormalInterface(Endpoint, AccessKeyID, AccessKeySecret, "")
 }
