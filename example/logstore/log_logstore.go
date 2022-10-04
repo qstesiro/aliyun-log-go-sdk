@@ -18,13 +18,17 @@ func main() {
 		go createStore(i, util.ProjectName, util.LogStoreName)
 	}
 	group.Wait()
-	time.Sleep(30 * time.Minute)
+	// time.Sleep(30 * time.Minute)
 	logstore, err := util.Client.GetLogStore(util.ProjectName, util.LogStoreName)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("create logstore successfully:", logstore.Name)
-
+	fmt.Printf(
+		"create logstore successfully: %s %v\n",
+		logstore.Name,
+		time.Unix(int64(logstore.CreateTime), 0).Format("2006-01-02 15:04:05"),
+	)
+	time.Sleep(30 * time.Minute)
 	updateLogstore := &sls.LogStore{
 		Name:        util.LogStoreName,
 		TTL:         2,

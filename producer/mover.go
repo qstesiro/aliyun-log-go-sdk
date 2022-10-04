@@ -49,6 +49,7 @@ func (mover *Mover) run(moverWaitGroup *sync.WaitGroup, config *ProducerConfig) 
 		nowTimeMs := GetTimeMs(time.Now().UnixNano())
 		mover.logAccumulator.lock.Lock()
 		mapCount := len(mover.logAccumulator.logGroupData)
+		// 处理驻留超时数据
 		for key, batch := range mover.logAccumulator.logGroupData {
 			timeInterval := batch.createTimeMs + config.LingerMs - nowTimeMs // 计算剩余驻留时长
 			if timeInterval <= 0 {
@@ -67,7 +68,7 @@ func (mover *Mover) run(moverWaitGroup *sync.WaitGroup, config *ProducerConfig) 
 			level.Debug(mover.logger).Log("msg", "No data time in map waiting for user configured RemainMs parameter values")
 			sleepMs = config.LingerMs
 		}
-
+		// 处理重试数据
 		retryProducerBatchList := mover.retryQueue.getRetryBatch(mover.moverShutDownFlag.Load())
 		if retryProducerBatchList == nil {
 			// If there is nothing to send in the retry queue, just wait for the minimum time that was given to me last time.
@@ -77,7 +78,7 @@ func (mover *Mover) run(moverWaitGroup *sync.WaitGroup, config *ProducerConfig) 
 			// 有重试的情况下处理完重试不等待直接执行下一轮
 			count := len(retryProducerBatchList)
 			for i := 0; i < count; i++ {
-				mover.threadPool.addTask(retryProducerBatchList[i])
+				mover.threadPool.addTask(retryProducerBatchList[i]) // 重新创建新的任务
 			}
 		}
 

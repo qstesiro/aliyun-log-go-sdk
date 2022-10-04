@@ -10,6 +10,7 @@ import (
 )
 
 // RetryQueue cache ProducerBatch and retry latter
+// 按时间排序的小顶堆实现,值得借鉴 !!!
 type RetryQueue struct {
 	batch []*ProducerBatch
 	mutex sync.Mutex
@@ -33,8 +34,10 @@ func (retryQueue *RetryQueue) sendToRetryQueue(producerBatch *ProducerBatch, log
 func (retryQueue *RetryQueue) getRetryBatch(moverShutDownFlag bool) (producerBatchList []*ProducerBatch) {
 	retryQueue.mutex.Lock()
 	defer retryQueue.mutex.Unlock()
-	if !moverShutDownFlag {
+	if !moverShutDownFlag { // 正常清理
 		for retryQueue.Len() > 0 {
+			// pop数据,已经超过等待时长的进行处理,未到达等待时长的再push回堆中并退出
+			// 因为是按下次重试的时间点进行小顶堆排序,所以找到第一个大于当前的时间的后续也都是未到过重试时间的
 			producerBatch := heap.Pop(retryQueue)
 			if producerBatch.(*ProducerBatch).nextRetryMs < GetTimeMs(time.Now().UnixNano()) {
 				producerBatchList = append(producerBatchList, producerBatch.(*ProducerBatch))
@@ -43,7 +46,7 @@ func (retryQueue *RetryQueue) getRetryBatch(moverShutDownFlag bool) (producerBat
 				break
 			}
 		}
-	} else {
+	} else { // 关闭清理
 		for retryQueue.Len() > 0 {
 			producerBatch := heap.Pop(retryQueue)
 			producerBatchList = append(producerBatchList, producerBatch.(*ProducerBatch))

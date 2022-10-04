@@ -77,7 +77,7 @@ func (ioWorker *IoWorker) sendToServer(producerBatch *ProducerBatch) {
 		}
 		level.Info(ioWorker.logger).Log("msg", "sendToServer failed", "error", err)
 		if slsError, ok := err.(*sls.Error); ok {
-			if _, ok := ioWorker.noRetryStatusCodeMap[int(slsError.HTTPCode)]; ok { // 部分错误不需要进行重试
+			if _, ok := ioWorker.noRetryStatusCodeMap[int(slsError.HTTPCode)]; ok { // 某些错误(例如400,404)不需要进行重试直接彻底失败
 				ioWorker.addErrorMessageToBatchAttempt(producerBatch, err, false, beginMs)
 				ioWorker.excuteFailedCallback(producerBatch)
 				return

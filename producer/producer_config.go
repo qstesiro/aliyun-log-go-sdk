@@ -38,7 +38,7 @@ type ProducerConfig struct {
 
 func GetDefaultProducerConfig() *ProducerConfig {
 	return &ProducerConfig{
-		TotalSizeLnBytes:      100 * 1024 * 1024,
+		TotalSizeLnBytes:      100 * 1024 * 1024, // 100m
 		MaxIoWorkerCount:      50,
 		MaxBlockSec:           60,
 		MaxBatchSize:          512 * 1024,

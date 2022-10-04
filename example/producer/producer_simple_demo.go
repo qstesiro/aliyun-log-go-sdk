@@ -293,9 +293,9 @@ func getProducer() *producer.Producer {
 }
 
 const (
-	GORMAX = 10
-	BATCH  = 100
-	COUNT  = 1000
+	GORMAX = 1
+	BATCH  = 10
+	COUNT  = 10000
 )
 
 func sendLog(producer *producer.Producer, proj, store string) {
@@ -356,6 +356,7 @@ func asyncSendLog(producer *producer.Producer, proj, store string) {
 }
 
 type Callback struct {
+	count int
 }
 
 func (r *Callback) Success(res *producer.Result) {
@@ -363,6 +364,8 @@ func (r *Callback) Success(res *producer.Result) {
 	// for _, attempt := range attemptList {
 	// 	fmt.Println(attempt)
 	// }
+	r.count += 1
+	fmt.Printf("%s -> %d\n", res.GetRequestId(), r.count)
 }
 
 func (r *Callback) Fail(res *producer.Result) {

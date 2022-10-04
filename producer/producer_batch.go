@@ -24,7 +24,7 @@ type ProducerBatch struct {
 	project              string
 	logstore             string
 	shardHash            *string
-	result               *Result
+	result               *Result // 结果与发送数据之间缺少关联
 	maxReservedAttempts  int
 }
 

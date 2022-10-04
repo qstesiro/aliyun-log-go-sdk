@@ -16,6 +16,10 @@ const (
 	IllegalStateException = "IllegalStateException"
 )
 
+// producer所有的数据发送都是异步没有同步
+// 以于未设置callback的发送将无法获取发送的结果
+// 对于设置了callback的发送虽然可以获得发送结果但是也无法获取具体哪些数据成功或失败
+// 因为结果与数据之间缺乏关联关系 ???
 type Producer struct {
 	producerConfig        *ProducerConfig
 	logAccumulator        *LogAccumulator
@@ -206,8 +210,8 @@ func (producer *Producer) SendLogListWithCallBack(project, logstore, topic, sour
 
 }
 
+// 通过缓冲数据的总大小进行实现简单的反压能力
 func (producer *Producer) waitTime() error {
-
 	if producer.producerConfig.MaxBlockSec > 0 {
 		for i := 0; i < producer.producerConfig.MaxBlockSec; i++ {
 
